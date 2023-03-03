@@ -4,14 +4,14 @@ services:
   nginx:
     build:
       dockerfile: ./Dockerfile
-      context: ./docker/nginx
+      context: ./nginx
     container_name: ${SERVICE_PREFIX}-nginx
     volumes:
       - ${APP_PATH_HOST}:${APP_DIR_TO_PATH}
-      - conf:/etc/nginx/conf.d
-      - vhost:/etc/nginx/vhost.d
-      - html:/usr/share/nginx/html
-      - certs:/etc/nginx/certs:ro
+      - ./conf:/etc/nginx/conf.d
+      - ./vhost:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+      - ./certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
     tty: true
     ports:
@@ -28,8 +28,8 @@ services:
     volumes_from:
       - nginx
     volumes:
-      - certs:/etc/nginx/certs:rw
-      - acme:/etc/acme.sh
+      - ./certs:/etc/nginx/certs:rw
+      - ./acme:/etc/acme.sh
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - dev-back
