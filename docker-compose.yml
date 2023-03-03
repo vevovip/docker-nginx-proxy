@@ -1,0 +1,64 @@
+version: '2'
+
+services:
+  nginx:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./docker/nginx
+    container_name: ${SERVICE_PREFIX}-nginx
+    volumes:
+      - ${APP_PATH_HOST}:${APP_DIR_TO_PATH}
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    tty: true
+    ports:
+      - "${NGINX_PORT}:80"
+      - "${NGINX_SSL_PORT}:443"
+    networks:
+      - dev-back
+    links:
+      - php-fpm
+
+  acme-companion:
+    image: nginxproxy/acme-companion:2.2
+    container_name: ${SERVICE_PREFIX}-ssl-acme
+    volumes_from:
+      - nginx
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dev-back
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+      args:
+        - PHP_VERSION=$PHP_VERSION
+    container_name: ${SERVICE_PREFIX}-php-fpm
+    environment:
+      - VIRTUAL_HOST=${ALLOWED_HOST}
+      - LETSENCRYPT_HOST=${ALLOWED_HOST}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${APP_PATH_HOST}:${APP_DIR_TO_PATH}
+    tty: true
+    networks:
+      - dev-back
+
+networks:
+  dev-back:
+    driver: bridge
+
+volumes:
+  conf:
+  vhost:
+  html:
+  certs:
+  acme:
+
